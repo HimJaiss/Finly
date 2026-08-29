@@ -154,5 +154,3 @@ Visit `http://localhost:3000` to view the application.
 ## License
 
 Copyright © 2026 Finly Inc. All rights reserved.
-
-Unauthorized copying, distribution, or modification of the source code or assets within this repository, via any medium, is strictly prohibited.

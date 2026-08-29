@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 const serializeDecimal = (obj) => {
   if (!obj) return obj;
   const serialized = { ...obj };
+
   if (obj.balance !== undefined && obj.balance !== null) {
     serialized.balance =
       typeof obj.balance.toNumber === "function"
@@ -19,6 +20,16 @@ const serializeDecimal = (obj) => {
         ? obj.amount.toNumber()
         : Number(obj.amount);
   }
+  if (obj.date instanceof Date) {
+    serialized.date = obj.date.toISOString();
+  }
+  if (obj.createdAt instanceof Date) {
+    serialized.createdAt = obj.createdAt.toISOString();
+  }
+  if (obj.updatedAt instanceof Date) {
+    serialized.updatedAt = obj.updatedAt.toISOString();
+  }
+
   return serialized;
 };
 
@@ -32,7 +43,8 @@ export async function getAccountWithTransactions(accountId) {
 
   if (!user) throw new Error("User not found");
 
-  const account = await db.account.findUnique({
+  // Use findFirst or findUnique with only 'id'
+  const account = await db.account.findFirst({
     where: {
       id: accountId,
       userId: user.id,
@@ -81,16 +93,13 @@ export async function bulkDeleteTransactions(transactionIds) {
           ? transaction.amount.toNumber()
           : Number(transaction.amount);
 
-      const change =
-        transaction.type === "EXPENSE" ? amount : -amount;
-
+      const change = transaction.type === "EXPENSE" ? amount : -amount;
       acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
       return acc;
     }, {});
 
-    // Delete transactions and update account balances in a transaction
+    // Delete transactions and update account balances
     await db.$transaction(async (tx) => {
-      // Delete transactions
       await tx.transaction.deleteMany({
         where: {
           id: { in: transactionIds },
@@ -98,7 +107,6 @@ export async function bulkDeleteTransactions(transactionIds) {
         },
       });
 
-      // Update account balances
       for (const [accountId, balanceChange] of Object.entries(
         accountBalanceChanges
       )) {
@@ -135,7 +143,7 @@ export async function updateDefaultAccount(accountId) {
       throw new Error("User not found");
     }
 
-    // First, unset any existing default account
+    // Unset any existing default account
     await db.account.updateMany({
       where: {
         userId: user.id,
@@ -144,11 +152,10 @@ export async function updateDefaultAccount(accountId) {
       data: { isDefault: false },
     });
 
-    // Then set the new default account
+    // Set the new default account
     const account = await db.account.update({
       where: {
         id: accountId,
-        userId: user.id,
       },
       data: { isDefault: true },
     });

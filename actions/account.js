@@ -5,12 +5,19 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 const serializeDecimal = (obj) => {
+  if (!obj) return obj;
   const serialized = { ...obj };
-  if (obj.balance) {
-    serialized.balance = obj.balance.toNumber();
+  if (obj.balance !== undefined && obj.balance !== null) {
+    serialized.balance =
+      typeof obj.balance.toNumber === "function"
+        ? obj.balance.toNumber()
+        : Number(obj.balance);
   }
-  if (obj.amount) {
-    serialized.amount = obj.amount.toNumber();
+  if (obj.amount !== undefined && obj.amount !== null) {
+    serialized.amount =
+      typeof obj.amount.toNumber === "function"
+        ? obj.amount.toNumber()
+        : Number(obj.amount);
   }
   return serialized;
 };
@@ -69,10 +76,14 @@ export async function bulkDeleteTransactions(transactionIds) {
 
     // Group transactions by account to update balances
     const accountBalanceChanges = transactions.reduce((acc, transaction) => {
+      const amount =
+        typeof transaction.amount.toNumber === "function"
+          ? transaction.amount.toNumber()
+          : Number(transaction.amount);
+
       const change =
-        transaction.type === "EXPENSE"
-          ? transaction.amount
-          : -transaction.amount;
+        transaction.type === "EXPENSE" ? amount : -amount;
+
       acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
       return acc;
     }, {});
@@ -143,7 +154,7 @@ export async function updateDefaultAccount(accountId) {
     });
 
     revalidatePath("/dashboard");
-    return { success: true, data: serializeTransaction(account) };
+    return { success: true, data: serializeDecimal(account) };
   } catch (error) {
     return { success: false, error: error.message };
   }

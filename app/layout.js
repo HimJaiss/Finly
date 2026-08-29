@@ -25,13 +25,10 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <Header />
-
-            {children}
-
+            <main className="min-h-screen">{children}</main>
+            <Toaster richColors position="top-right" />
             <Footer />
           </ThemeProvider>
-
-          <Toaster />
         </body>
       </html>
     </ClerkProvider>

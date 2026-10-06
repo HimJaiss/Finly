@@ -58,7 +58,6 @@ const formatCurrency = (amount) => {
 
 // =====================================================
 // Custom Tooltip
-// Removes the unwanted "0"
 // =====================================================
 
 const CustomTooltip = ({ active, payload }) => {
@@ -79,10 +78,8 @@ const CustomTooltip = ({ active, payload }) => {
         px-4
         py-3
         shadow-lg
-
         dark:border-[#21406D]
         dark:bg-[#071A33]
-
         transition-colors
         duration-300
       "
@@ -119,55 +116,44 @@ const CustomTooltip = ({ active, payload }) => {
 // =====================================================
 
 export function DashboardOverview({ accounts, transactions }) {
-  // ===================================================
   // Selected Account
-  // ===================================================
-
   const [selectedAccountId, setSelectedAccountId] = useState(
     accounts.find((account) => account.isDefault)?.id ||
       accounts[0]?.id ||
       ""
   );
 
-  // ===================================================
-  // Filter Transactions
-  // ===================================================
-
+  // Filter Transactions for Selected Account
   const accountTransactions = transactions.filter(
     (transaction) => transaction.accountId === selectedAccountId
   );
 
-  // ===================================================
-  // Recent Transactions
-  // ===================================================
-
+  // Recent 5 Transactions
   const recentTransactions = [...accountTransactions]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
-  // ===================================================
-  // Current Month Expenses
-  // ===================================================
-
+  // Current Month Expenses (Falls back to all expenses if none exist for current month)
   const currentDate = new Date();
 
-  const currentMonthExpenses = accountTransactions.filter(
-    (transaction) => {
-      const transactionDate = new Date(transaction.date);
+  let monthExpenses = accountTransactions.filter((transaction) => {
+    const transactionDate = new Date(transaction.date);
+    return (
+      transaction.type === "EXPENSE" &&
+      transactionDate.getMonth() === currentDate.getMonth() &&
+      transactionDate.getFullYear() === currentDate.getFullYear()
+    );
+  });
 
-      return (
-        transaction.type === "EXPENSE" &&
-        transactionDate.getMonth() === currentDate.getMonth() &&
-        transactionDate.getFullYear() === currentDate.getFullYear()
-      );
-    }
-  );
+  // If no expenses in the current month, show all available expenses so the chart doesn't stay blank
+  if (monthExpenses.length === 0) {
+    monthExpenses = accountTransactions.filter(
+      (transaction) => transaction.type === "EXPENSE"
+    );
+  }
 
-  // ===================================================
   // Group Expenses By Category
-  // ===================================================
-
-  const expensesByCategory = currentMonthExpenses.reduce(
+  const expensesByCategory = monthExpenses.reduce(
     (accumulator, transaction) => {
       const category = transaction.category || "Other";
 
@@ -182,10 +168,7 @@ export function DashboardOverview({ accounts, transactions }) {
     {}
   );
 
-  // ===================================================
   // Pie Chart Data
-  // ===================================================
-
   const pieChartData = Object.entries(expensesByCategory).map(
     ([category, amount]) => ({
       name: category,
@@ -193,11 +176,7 @@ export function DashboardOverview({ accounts, transactions }) {
     })
   );
 
-  // ===================================================
-  // Longest Account Name
-  // Used for automatic dropdown width
-  // ===================================================
-
+  // Automatic dropdown width
   const longestAccountName =
     accounts.reduce(
       (longest, account) =>
@@ -212,24 +191,15 @@ export function DashboardOverview({ accounts, transactions }) {
     Math.min(longestAccountName.length * 8 + 55, 260)
   );
 
-  // ===================================================
-  // JSX
-  // ===================================================
-
   return (
     <div className="grid gap-5 md:grid-cols-2">
-      {/* ================================================= */}
       {/* Recent Transactions */}
-      {/* ================================================= */}
-
       <Card
         className="
           border-gray-200
           bg-white
-
           dark:border-[#21406D]
           dark:bg-[#071A33]
-
           transition-colors
           duration-300
         "
@@ -247,10 +217,6 @@ export function DashboardOverview({ accounts, transactions }) {
               Recent Transactions
             </CardTitle>
 
-            {/* =============================== */}
-            {/* Account Dropdown */}
-            {/* =============================== */}
-
             <Select
               value={selectedAccountId}
               onValueChange={setSelectedAccountId}
@@ -262,25 +228,19 @@ export function DashboardOverview({ accounts, transactions }) {
                 className="
                   h-9
                   shrink-0
-
                   rounded-md
                   border
                   border-gray-200
                   bg-white
-
                   px-3
-
                   text-sm
                   font-medium
                   text-gray-800
-
                   focus:ring-2
                   focus:ring-[#2D7DFF]/30
-
                   dark:border-[#21406D]
                   dark:bg-[#0A1830]
                   dark:text-[#D5DDF0]
-
                   transition-colors
                   duration-300
                 "
@@ -293,7 +253,6 @@ export function DashboardOverview({ accounts, transactions }) {
                   border-gray-200
                   bg-white
                   text-gray-800
-
                   dark:border-[#21406D]
                   dark:bg-[#0A1830]
                   dark:text-[#D5DDF0]
@@ -305,10 +264,8 @@ export function DashboardOverview({ accounts, transactions }) {
                     value={account.id}
                     className="
                       cursor-pointer
-
                       focus:bg-gray-100
                       focus:text-gray-900
-
                       dark:focus:bg-[#102B50]
                       dark:focus:text-white
                     "
@@ -349,21 +306,17 @@ export function DashboardOverview({ accounts, transactions }) {
                       gap-4
                     "
                   >
-                    {/* Transaction Information */}
-
                     <div className="min-w-0">
                       <p
                         className="
                           truncate
                           text-sm
                           font-medium
-
                           text-gray-900
                           dark:text-white
                         "
                       >
-                        {transaction.description ||
-                          "Untitled Transaction"}
+                        {transaction.description || "Untitled Transaction"}
                       </p>
 
                       <p
@@ -374,14 +327,9 @@ export function DashboardOverview({ accounts, transactions }) {
                           dark:text-gray-400
                         "
                       >
-                        {format(
-                          new Date(transaction.date),
-                          "PP"
-                        )}
+                        {format(new Date(transaction.date), "PP")}
                       </p>
                     </div>
-
-                    {/* Transaction Amount */}
 
                     <div
                       className={cn(
@@ -410,18 +358,13 @@ export function DashboardOverview({ accounts, transactions }) {
         </CardContent>
       </Card>
 
-      {/* ================================================= */}
       {/* Monthly Expense Breakdown */}
-      {/* ================================================= */}
-
       <Card
         className="
           border-gray-200
           bg-white
-
           dark:border-[#21406D]
           dark:bg-[#071A33]
-
           transition-colors
           duration-300
         "
@@ -450,14 +393,11 @@ export function DashboardOverview({ accounts, transactions }) {
                 dark:text-gray-400
               "
             >
-              No expenses this month
+              No expenses recorded
             </p>
           ) : (
             <div className="h-[300px] w-full">
-              <ResponsiveContainer
-                width="100%"
-                height="100%"
-              >
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieChartData}
@@ -478,35 +418,26 @@ export function DashboardOverview({ accounts, transactions }) {
                       strokeWidth: 1,
                     }}
                   >
-                    {pieChartData.map(
-                      (entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            COLORS[
-                              index % COLORS.length
-                            ]
-                          }
-                        />
-                      )
-                    )}
+                    {pieChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
                   </Pie>
-
-                  {/* Professional Custom Tooltip */}
 
                   <Tooltip
                     content={<CustomTooltip />}
                     cursor={false}
                   />
 
-                  {/* Legend */}
-
                   <Legend
                     verticalAlign="bottom"
                     align="center"
                     iconType="circle"
                     wrapperStyle={{
-                      paddingTop: "10px5"
+                      paddingTop: "10px",
+                      fontSize: "13px",
                     }}
                   />
                 </PieChart>

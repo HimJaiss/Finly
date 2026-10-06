@@ -70,9 +70,17 @@ export async function updateBudget(amount) {
 
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
+      include: {
+        accounts: true, // Fetch accounts to verify user has created one
+      },
     });
 
     if (!user) throw new Error("User not found");
+
+    // Block budget update if no account has been created
+    if (!user.accounts || user.accounts.length === 0) {
+      throw new Error("Please create an account first before setting a monthly budget.");
+    }
 
     // Update or create budget
     const budget = await db.budget.upsert({

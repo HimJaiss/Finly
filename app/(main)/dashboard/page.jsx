@@ -1,7 +1,6 @@
-import { Suspense } from "react";
 import { getUserAccounts, getDashboardData } from "@/actions/dashboard";
 import { getCurrentBudget } from "@/actions/budget";
-import { checkUser } from "@/lib/checkUser"; // 1. Import checkUser
+import { checkUser } from "@/lib/checkUser";
 import { AccountCard } from "./_components/account-card";
 import { CreateAccountDrawer } from "@/components/create-account-drawer";
 import { BudgetProgress } from "./_components/budget-progress";
@@ -10,7 +9,6 @@ import { Plus } from "lucide-react";
 import { DashboardOverview } from "./_components/transaction-overview";
 
 export default async function DashboardPage() {
-  // 2. Ensure user exists in database before fetching their data
   await checkUser();
 
   const [accounts, transactions] = await Promise.all([
@@ -18,9 +16,9 @@ export default async function DashboardPage() {
     getDashboardData(),
   ]);
 
-  const defaultAccount = accounts?.find((account) => account.isDefault);
+  const accountList = accounts ?? [];
+  const defaultAccount = accountList.find((account) => account.isDefault);
 
-  // Get budget for default account
   let budgetData = null;
   if (defaultAccount) {
     budgetData = await getCurrentBudget(defaultAccount.id);
@@ -28,16 +26,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Budget Progress */}
+      {/* Budget Progress with explicit account verification */}
       <BudgetProgress
         initialBudget={budgetData?.budget}
         currentExpenses={budgetData?.currentExpenses || 0}
+        hasAccounts={accountList.length > 0}
       />
 
       {/* Dashboard Overview */}
       <DashboardOverview
-        accounts={accounts}
-        transactions={transactions || []}
+        accounts={accountList}
+        transactions={transactions ?? []}
       />
 
       {/* Accounts Grid */}
@@ -50,10 +49,10 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </CreateAccountDrawer>
-        {accounts?.length > 0 &&
-          accounts?.map((account) => (
-            <AccountCard key={account.id} account={account} />
-          ))}
+
+        {accountList.map((account) => (
+          <AccountCard key={account.id} account={account} />
+        ))}
       </div>
     </div>
   );

@@ -267,12 +267,7 @@ const HeroSection = () => {
                 alt={slide.alt}
                 fill
                 priority={index === 0}
-                sizes="
-                  (max-width: 640px) 94vw,
-                  (max-width: 768px) 92vw,
-                  (max-width: 1024px) 90vw,
-                  88vw
-                "
+                sizes="(max-width: 640px) 94vw, (max-width: 768px) 92vw, (max-width: 1024px) 90vw, 88vw"
                 className="
                   block
                   w-full

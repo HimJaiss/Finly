@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -16,8 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
 import useFetch from "@/hooks/use-fetch";
+import { CreateAccountDrawer } from "@/components/create-account-drawer";
 
-export function BudgetProgress({ initialBudget, currentExpenses }) {
+export function BudgetProgress({ initialBudget, currentExpenses, hasAccounts = false }) {
   const [isEditing, setIsEditing] = useState(false);
   const [newBudget, setNewBudget] = useState(
     initialBudget?.amount?.toString() || ""
@@ -34,7 +35,21 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
     error,
   } = useFetch(updateBudget);
 
+  const handleStartEditing = () => {
+    if (!hasAccounts) {
+      toast.warning("Please create an account first before setting a monthly budget.");
+      return;
+    }
+    setIsEditing(true);
+  };
+
   const handleUpdateBudget = async () => {
+    if (!hasAccounts) {
+      toast.error("Please create an account first before setting a monthly budget.");
+      setIsEditing(false);
+      return;
+    }
+
     const amount = parseFloat(newBudget);
 
     if (isNaN(amount) || amount <= 0) {
@@ -102,25 +117,41 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
             ) : (
               <>
                 <CardDescription>
-                  {initialBudget
-                    ? `₹${currentExpenses.toFixed(2)} of ₹${initialBudget.amount.toFixed(2)} spent`
-                    : "No budget set"}
+                  {!hasAccounts ? (
+                    <span className="text-amber-500 flex items-center gap-1.5 text-xs">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Create an account first to set a budget
+                    </span>
+                  ) : initialBudget ? (
+                    `₹${currentExpenses.toFixed(2)} of ₹${initialBudget.amount.toFixed(2)} spent`
+                  ) : (
+                    "No budget set"
+                  )}
                 </CardDescription>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditing(true)}
-                  className="h-6 w-6"
-                >
-                  <Pencil className="h-3 w-3" />
-                </Button>
+
+                {hasAccounts ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleStartEditing}
+                    className="h-6 w-6"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                ) : (
+                  <CreateAccountDrawer>
+                    <Button variant="outline" size="sm" className="h-7 text-xs ml-2">
+                      + Create Account
+                    </Button>
+                  </CreateAccountDrawer>
+                )}
               </>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {initialBudget && (
+        {initialBudget && hasAccounts && (
           <div className="space-y-2">
             <Progress
               value={percentUsed}
